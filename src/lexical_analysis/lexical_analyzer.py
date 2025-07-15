@@ -1,10 +1,10 @@
+from exceptions.lexical_exception import LexicalException
 from lexical_analysis.token.token import Token
 from lexical_analysis.token.token_mapping import single_char_tokens
 from lexical_analysis.token.token_kind import TokenKind
 
 
 class LexicalAnalyzer:
-
     def __init__(self):
         self._buffer: str = ""
         self._line: int = 0
@@ -35,15 +35,22 @@ class LexicalAnalyzer:
             return
 
         if lexeme.isdigit():
-            token = Token(line=self._line, column=self._column - len(lexeme) + 1,
-                          kind=TokenKind.LITERAL, lexeme=lexeme)
+            token = Token(
+                line=self._line,
+                column=self._column - len(lexeme) + 1,
+                kind=TokenKind.LITERAL,
+                lexeme=lexeme,
+            )
         elif lexeme in single_char_tokens:
             token_kind = single_char_tokens[lexeme]
-            token = Token(line=self._line, column=self._column,
-                          kind=token_kind, lexeme=lexeme)
+            token = Token(
+                line=self._line, column=self._column, kind=token_kind, lexeme=lexeme
+            )
         else:
-            token = Token(line=self._line, column=self._column,
-                          kind=TokenKind.UNKNOWN, lexeme=lexeme)
+            raise LexicalException(
+                f"Erro léxico na linha {self._line + 1}, coluna {self._column + 1}: "
+                f"Lexema '{lexeme}' não reconhecido."
+            )
         self.add_token(token)
         self.reset_buffer()
 
@@ -55,7 +62,7 @@ class LexicalAnalyzer:
         """Analyze the source code and generate tokens."""
         self.reset_buffer()
         for char in source_code:
-            if char == '\n':
+            if char == "\n":
                 self._line += 1
                 self._column = 0
                 continue

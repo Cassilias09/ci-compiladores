@@ -1,4 +1,5 @@
 import sys
+from exceptions.lexical_exception import LexicalException
 from lexical_analysis.lexical_analyzer import LexicalAnalyzer
 
 
@@ -11,7 +12,7 @@ def main():
     file_path = sys.argv[1]
 
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             source_code = file.read()
     except FileNotFoundError:
         print(f"Erro: Arquivo '{file_path}' não encontrado.")
@@ -20,7 +21,11 @@ def main():
     print("Iniciando análise léxica do arquivo:", file_path)
 
     analyzer = LexicalAnalyzer()
-    tokens = analyzer.analyze(source_code)
+    try:
+        tokens = analyzer.analyze(source_code)
+    except LexicalException as e:
+        print(f"Erro durante a análise léxica: {e}")
+        sys.exit(1)
 
     print("Análise léxica concluída. Tokens gerados:\n")
 
