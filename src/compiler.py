@@ -37,13 +37,16 @@ def main():
     print("\nIniciando análise sintática do arquivo:", file_path)
     analyzer = SyntacticalAnalyzer(tokens)
     try:
-        tree = analyzer.parse()
+        trees = analyzer.parse()
     except SyntacticalException as e:
         print(f"Erro durante a análise sintática: {e}")
         sys.exit(1)
 
-    print("Análise sintática concluída. Árvore sintática gerada:\n")
-    tree.display()
+    print("Análise sintática concluída. Árvores sintáticas geradas:\n")
+    for i, tree in enumerate(trees):
+        print(f"Árvore sintática linha {i + 1}:\n")
+        tree.display()
+        print("\n")
 
 
 if __name__ == "__main__":

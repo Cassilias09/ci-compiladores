@@ -1,5 +1,7 @@
+from typing import List
 from lexical_analysis.token.token import Token
 from lexical_analysis.token.token_kind import TokenKind
+from syntatic_analysis.nodes import BaseNode
 from syntatic_analysis.nodes.binary_operation_node import BinaryOperationNode
 from syntatic_analysis.nodes.literal_node import LiteralNode
 from exceptions.syntactical_exception import SyntacticalException
@@ -10,9 +12,14 @@ class SyntacticalAnalyzer:
         self.tokens = tokens
         self.current_token_index = 0
 
-        self.syntactic_tree_node = []
+        self.syntactic_tree_nodes = []
 
-    def parse(self):
+    def parse(self) -> List[BaseNode]:
+        while self._check_token():
+            self.syntactic_tree_nodes.append(self._parse_line())
+        return self.syntactic_tree_nodes
+
+    def _parse_line(self):
         while True:
             token = self._read_token()
             if not token:
@@ -20,9 +27,9 @@ class SyntacticalAnalyzer:
 
             if token.kind == TokenKind.PARENTHESIS_OPEN:
                 operation_node = BinaryOperationNode(
-                    left=self.parse(),
+                    left=self._parse_line(),
                     operator=self._read_token().lexeme,
-                    right=self.parse(),
+                    right=self._parse_line(),
                 )
                 self._read_token()  # Lê o PARENTHESIS_CLOSE
                 return operation_node
