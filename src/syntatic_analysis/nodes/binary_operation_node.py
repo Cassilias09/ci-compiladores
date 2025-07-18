@@ -4,7 +4,7 @@ from syntatic_analysis.nodes import BaseNode
 class BinaryOperationNode(BaseNode):
     """Node representing a binary operation in the syntactic analysis tree."""
 
-    def __init__(self, left, operator, right):
+    def __init__(self, left: BaseNode, operator: str, right: BaseNode):
         """
         Initialize a binary operation node.
 
