@@ -1,13 +1,6 @@
 # ci-compiladores
 Repositório para colocar os trabalhos realizados na disciplina de Construção de Compiladores, do curso de Ciência da Computação.
 
-## Especificações dos Testes
-
-O projeto deve incluir um conjunto de testes que verifica:
-- A produção correta da árvore sintática para um conjunto de programas válidos.
-- O valor do programa obtido pela interpretação desses programas.
-- Exemplos de programas com erros de sintaxe, onde o compilador deve ser capaz de detectar e reportar esses erros.
-
 ## Documentação de Uso
 
 ### Como utilizar o analisador léxico e sintático
