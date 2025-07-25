@@ -48,8 +48,9 @@ class LexicalAnalyzer:
             )
         else:
             raise LexicalException(
-                f"Erro léxico na linha {self._line + 1}, coluna {self._column + 1}: "
-                f"Lexema '{lexeme}' não reconhecido."
+                f"Lexema '{lexeme}' não reconhecido.",
+                line=self._line,
+                column=self._column,
             )
         self.add_token(token)
         self.reset_buffer()
