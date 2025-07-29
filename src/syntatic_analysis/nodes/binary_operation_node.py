@@ -32,19 +32,19 @@ class BinaryOperationNode(BaseNode):
             + "push %rax\n"
             + f"{left_code}\n"
             + "pop %rbx\n"
-            + f"{self._operator_to_code()} %rbx, %rax\n"
+            + self._operator_to_code()
         )
         return code
 
     def _operator_to_code(self):
         match self.operator:
             case "*":
-                return "mul"
+                return "mul %rbx\n"
             case "/":
-                return "div"
+                return "div %rbx, %rax\n"
             case "+":
-                return "add"
+                return "add %rbx, %rax\n"
             case "-":
-                return "sub"
+                return "sub %rbx, %rax\n"
             case _:
                 raise ValueError(f"Operator '{self.operator}' not supported.")

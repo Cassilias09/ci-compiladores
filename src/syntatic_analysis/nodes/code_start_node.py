@@ -24,6 +24,6 @@ class CodeStartNode(BaseNode):
             + "_start:\n"
             + code
             + "call sair\n"
-            + '.include "runtime.s"'
+            + '.include "runtime.s"\n'
         )
         return program
