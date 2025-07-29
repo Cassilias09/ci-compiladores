@@ -2,15 +2,13 @@ import sys
 from lexical_analysis.lexical_analyzer import LexicalAnalyzer
 from syntatic_analysis.syntactical_analyzer import SyntacticalAnalyzer
 from exceptions.exception_list import ExceptionList
+from arguments import Arguments
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Erro: Número incorreto de argumentos.")
-        print("Uso correto: python compiler.py <source_file_path>")
-        sys.exit(1)
-
-    file_path = sys.argv[1]
+    args = Arguments().parse(sys.argv[1:])
+    file_path = args.input_path
+    output_path = args.output
 
     try:
         with open(file_path, "r") as file:
@@ -41,6 +39,10 @@ def main():
         print("Iniciando geração de código assembly...")
         code = syntactic_tree.generate_code()
         print(code)
+
+        if output_path:
+            with open(output_path, "w") as file:
+                file.write(code)
 
     except ExceptionList as e:
         print(e)

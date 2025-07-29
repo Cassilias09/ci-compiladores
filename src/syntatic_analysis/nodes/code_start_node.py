@@ -17,5 +17,13 @@ class CodeStartNode(BaseNode):
         code = ""
         for child in self._children:
             code += child.generate_code()
-            code += "\n"
-        return code
+            code += "call imprime_num\n\n"
+        program = (
+            ".section .text\n"
+            + ".globl _start\n"
+            + "_start:\n"
+            + code
+            + "call sair\n"
+            + '.include "runtime.s"'
+        )
+        return program
