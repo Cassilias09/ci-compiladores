@@ -34,49 +34,48 @@ class SyntacticalAnalyzer:
 
             if token.kind == TokenKind.PARENTHESIS_OPEN:
                 if self._check_token() is None:
-                    exception = SyntacticalException(
-                        f"Token '{token.lexeme}' não esperado.",
-                        line=token.line,
-                        column=token.column,
-                    )
-                    self._exceptions.append(exception)
+                    self._except(token)
                     return
 
                 if self._check_token().kind in OPERAND_TOKENS:
-                    exception = SyntacticalException(
-                        f"Token '{token.lexeme}' não esperado.",
-                        line=token.line,
-                        column=token.column,
-                    )
-                    self._exceptions.append(exception)
+                    self._except(token)
+                    return
+
+                left_node = self._parse_line()
+                if left_node is None:
+                    self._except(token)
+                    return
+
+                operator = self._read_token()
+                if operator is None:
+                    self._except(token)
+                    return
+
+                if operator.kind not in OPERAND_TOKENS:
+                    self._except(token)
+                    return
+
+                right_node = self._parse_line()
+                if right_node is None:
+                    self._except(token)
                     return
 
                 operation_node = BinaryOperationNode(
-                    left=self._parse_line(),
-                    operator=self._read_token().lexeme,
-                    right=self._parse_line(),
+                    left=left_node,
+                    operator=operator.lexeme,
+                    right=right_node,
                 )
 
                 # Lê o fim da expressão
                 if self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
-                    exception = SyntacticalException(
-                        f"Token '{token.lexeme}' não esperado.",
-                        line=token.line,
-                        column=token.column,
-                    )
-                    self._exceptions.append(exception)
+                    self._except(token)
                     return
                 return operation_node
 
             if token.kind == TokenKind.LITERAL:
                 return LiteralNode(value=token.lexeme)
 
-            exception = SyntacticalException(
-                f"Token '{token.lexeme}' não reconhecido.",
-                line=token.line,
-                column=token.column,
-            )
-            self._exceptions.append(exception)
+            self._except(token)
 
     def _check_token(self) -> Token:
         if self.current_token_index < len(self.tokens):
@@ -92,3 +91,11 @@ class SyntacticalAnalyzer:
 
     def advance(self):
         self.current_token_index += 1
+
+    def _except(self, token: Token):
+        exception = SyntacticalException(
+            f"Token '{token.lexeme}' não esperado.",
+            line=token.line,
+            column=token.column,
+        )
+        self._exceptions.append(exception)
