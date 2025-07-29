@@ -32,16 +32,19 @@ def main():
 
         print("\nIniciando análise sintática do arquivo:", file_path)
         analyzer = SyntacticalAnalyzer(tokens)
-        trees = analyzer.parse()
+        syntactic_tree = analyzer.parse()
+
+        print("Análise sintática concluída. Árvores sintáticas geradas:\n")
+        syntactic_tree.display()
+        print("\n")
+
+        print("Iniciando geração de código assembly...")
+        code = syntactic_tree.generate_code()
+        print(code)
+
     except ExceptionList as e:
         print(e)
         sys.exit(1)
-
-    print("Análise sintática concluída. Árvores sintáticas geradas:\n")
-    for i, tree in enumerate(trees):
-        print(f"Árvore sintática linha {i + 1}:\n")
-        tree.display()
-        print("\n")
 
 
 if __name__ == "__main__":
