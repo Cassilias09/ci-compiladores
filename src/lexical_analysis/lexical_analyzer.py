@@ -1,3 +1,4 @@
+from exceptions.exception_list import ExceptionList
 from exceptions.lexical_exception import LexicalException
 from lexical_analysis.token.token import Token
 from lexical_analysis.token.token_mapping import single_char_tokens
@@ -10,6 +11,7 @@ class LexicalAnalyzer:
         self._line: int = 0
         self._column: int = -1
         self._tokens: list[Token] = []
+        self._exceptions: list[Exception] = []
 
     def add_to_buffer(self, char: str):
         """Add a character to the buffer."""
@@ -47,11 +49,15 @@ class LexicalAnalyzer:
                 line=self._line, column=self._column, kind=token_kind, lexeme=lexeme
             )
         else:
-            raise LexicalException(
+            exception = LexicalException(
                 f"Lexema '{lexeme}' não reconhecido.",
                 line=self._line,
                 column=self._column,
             )
+            self._exceptions.append(exception)
+            self.reset_buffer()
+            return
+
         self.add_token(token)
         self.reset_buffer()
 
@@ -81,4 +87,6 @@ class LexicalAnalyzer:
             self.add_to_buffer(char)
             self.generate_token()
 
+        if len(self._exceptions) != 0:
+            raise ExceptionList(process="Lexical Analysis", exceptions=self._exceptions)
         return self.get_tokens()

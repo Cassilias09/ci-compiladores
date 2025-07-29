@@ -1,8 +1,7 @@
 import sys
-from exceptions.lexical_exception import LexicalException
 from lexical_analysis.lexical_analyzer import LexicalAnalyzer
-from exceptions.syntactical_exception import SyntacticalException
 from syntatic_analysis.syntactical_analyzer import SyntacticalAnalyzer
+from exceptions.exception_list import ExceptionList
 
 
 def main():
@@ -20,26 +19,22 @@ def main():
         print(f"Erro: Arquivo '{file_path}' não encontrado.")
         sys.exit(1)
 
-    print("Iniciando análise léxica do arquivo:", file_path)
-
-    analyzer = LexicalAnalyzer()
     try:
+        print("Iniciando análise léxica do arquivo:", file_path)
+
+        analyzer = LexicalAnalyzer()
         tokens = analyzer.analyze(source_code)
-    except LexicalException as e:
-        print(f"Erro durante a análise léxica: {e}")
-        sys.exit(1)
 
-    print("Análise léxica concluída. Tokens gerados:\n")
+        print("Análise léxica concluída. Tokens gerados:\n")
 
-    for token in tokens:
-        print(token)
+        for token in tokens:
+            print(token)
 
-    print("\nIniciando análise sintática do arquivo:", file_path)
-    analyzer = SyntacticalAnalyzer(tokens)
-    try:
+        print("\nIniciando análise sintática do arquivo:", file_path)
+        analyzer = SyntacticalAnalyzer(tokens)
         trees = analyzer.parse()
-    except SyntacticalException as e:
-        print(f"Erro durante a análise sintática: {e}")
+    except ExceptionList as e:
+        print(e)
         sys.exit(1)
 
     print("Análise sintática concluída. Árvores sintáticas geradas:\n")
