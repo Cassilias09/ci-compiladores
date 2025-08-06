@@ -1,6 +1,14 @@
-class BaseNode:
+from abc import ABC, abstractmethod
+
+
+class BaseNode(ABC):
     def __init__(self) -> None:
         pass
 
-    def display(self, identation: int = 0):
-        print(self)
+    @abstractmethod
+    def display(self, identation: int = 0) -> None:
+        pass
+
+    @abstractmethod
+    def generate_code(self) -> str:
+        pass

@@ -17,3 +17,6 @@ class LiteralNode(BaseNode):
 
     def display(self, identation: int = 0):
         print((" " * identation) + self.value)
+
+    def generate_code(self):
+        return f"mov ${self.value}, %rax"

@@ -23,3 +23,28 @@ class BinaryOperationNode(BaseNode):
         print((" " * identation) + self.operator)
         self.left.display(identation=identation + 1)
         self.right.display(identation=identation + 1)
+
+    def generate_code(self):
+        left_code = self.left.generate_code()
+        right_code = self.right.generate_code()
+        code = (
+            f"{right_code}\n"
+            + "push %rax\n"
+            + f"{left_code}\n"
+            + "pop %rbx\n"
+            + self._operator_to_code()
+        )
+        return code
+
+    def _operator_to_code(self):
+        match self.operator:
+            case "*":
+                return "mul %rbx\n"
+            case "/":
+                return "xor %rdx, %rdx\n" + "div %rbx, %rax\n"
+            case "+":
+                return "add %rbx, %rax\n"
+            case "-":
+                return "sub %rbx, %rax\n"
+            case _:
+                raise ValueError(f"Operator '{self.operator}' not supported.")
