@@ -6,8 +6,6 @@ from syntatic_analysis.nodes.literal_node import LiteralNode
 from exceptions.syntactical_exception import SyntacticalException
 from exceptions.exception_list import ExceptionList
 
-OPERAND_TOKENS = [TokenKind.ASTERISK, TokenKind.PLUS, TokenKind.MINUS, TokenKind.SLASH]
-
 
 class SyntacticalAnalyzer:
     def __init__(self, tokens):
@@ -19,63 +17,53 @@ class SyntacticalAnalyzer:
 
     def parse(self) -> CodeStartNode:
         while self._check_token():
-            self.code_start.add_child(self._parse_line())
+            try:
+                self.code_start.add_child(self._parse_exp_a())
+            except Exception as e:
+                self._exceptions.append(e)
+                self.advance()
         if len(self._exceptions) != 0:
             raise ExceptionList(
                 process="Syntactical Analysis", exceptions=self._exceptions
             )
         return self.code_start
 
-    def _parse_line(self):
-        while True:
-            token = self._read_token()
-            if not token:
-                break
+    def _parse_exp_a(self):
+        left = self._parse_exp_m()
+        while self._check_token() and self._check_token().kind in [TokenKind.PLUS, TokenKind.MINUS]:
+            operator = self._read_token()
+            right = self._parse_exp_m()
+            left = BinaryOperationNode(left, operator.lexeme, right)
+        return left
 
-            if token.kind == TokenKind.PARENTHESIS_OPEN:
-                if self._check_token() is None:
-                    self._except(token)
-                    return
+    def _parse_exp_m(self):
+        left = self._parse_prim()
+        while self._check_token() and self._check_token().kind in [TokenKind.ASTERISK, TokenKind.SLASH]:
+            operator = self._read_token()
+            right = self._parse_prim()
+            left = BinaryOperationNode(left, operator.lexeme, right)
+        return left
 
-                if self._check_token().kind in OPERAND_TOKENS:
-                    self._except(token)
-                    return
-
-                left_node = self._parse_line()
-                if left_node is None:
-                    self._except(token)
-                    return
-
-                operator = self._read_token()
-                if operator is None:
-                    self._except(token)
-                    return
-
-                if operator.kind not in OPERAND_TOKENS:
-                    self._except(token)
-                    return
-
-                right_node = self._parse_line()
-                if right_node is None:
-                    self._except(token)
-                    return
-
-                operation_node = BinaryOperationNode(
-                    left=left_node,
-                    operator=operator.lexeme,
-                    right=right_node,
-                )
-
-                # Lê o fim da expressão
-                if self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
-                    self._except(token)
-                    return
-                return operation_node
-
-            if token.kind == TokenKind.LITERAL:
-                return LiteralNode(value=token.lexeme)
-
+    def _parse_prim(self):
+        token = self._read_token()
+        if not token:
             self._except(token)
+            return None
+
+        if token.kind == TokenKind.PARENTHESIS_OPEN:
+            exp = self._parse_exp_a()
+            if not self._check_token() or self._check_token().kind != TokenKind.PARENTHESIS_CLOSE:
+                self._except(self._check_token())
+                return None
+            self._read_token()  # Consume the closing parenthesis
+            return exp
+
+        elif token.kind == TokenKind.LITERAL:
+            return LiteralNode(token.lexeme)
+
+        else:
+            self._except(token)
+            return None
 
     def _check_token(self) -> Token:
         if self.current_token_index < len(self.tokens):
