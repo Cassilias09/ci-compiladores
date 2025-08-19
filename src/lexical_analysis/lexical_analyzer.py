@@ -86,6 +86,7 @@ class LexicalAnalyzer:
                 self.generate_token()
             self.add_to_buffer(char)
             self.generate_token()
+        self.generate_token()
 
         if len(self._exceptions) != 0:
             raise ExceptionList(process="Lexical Analysis", exceptions=self._exceptions)
