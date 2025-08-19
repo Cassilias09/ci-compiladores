@@ -41,7 +41,7 @@ class BinaryOperationNode(BaseNode):
             case "*":
                 return "mul %rbx\n"
             case "/":
-                return "xor %rdx, %rdx\n" + "div %rbx, %rax\n"
+                return "xor %rdx, %rdx\n" + "div %rbx\n"
             case "+":
                 return "add %rbx, %rax\n"
             case "-":
