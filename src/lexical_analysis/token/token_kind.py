@@ -14,3 +14,7 @@ class TokenKind(enum.Enum):
     SLASH = 6
 
     UNKNOWN = 7
+    
+    EQUALS = 8
+    SEMICOLON = 9
+    IDENTIFIER = 10
