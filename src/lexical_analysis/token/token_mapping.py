@@ -7,4 +7,6 @@ single_char_tokens = {
     '-': TokenKind.MINUS,
     '*': TokenKind.ASTERISK,
     '/': TokenKind.SLASH,
+    '=': TokenKind.EQUALS,
+    ';': TokenKind.SEMICOLON
 }
