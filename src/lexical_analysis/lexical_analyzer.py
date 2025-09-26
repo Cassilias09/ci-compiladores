@@ -166,19 +166,17 @@ class LexicalAnalyzer:
                 continue
 
             if char in single_char_tokens:
-                if i + 1 < length:
-                    two_char = char + source_code[i + 1]
-                    if two_char in multi_char_tokens:
-                        self._buffer = two_char
-                        self.generate_token()
-                        self._column += 2
-                        i += 2
-                        continue
-                    self._buffer = char
+                if i + 1 < length and (char + source_code[i + 1]) in multi_char_tokens:
+                    self._buffer = char + source_code[i + 1]
                     self.generate_token()
-                    self._column += 1
-                    i += 1
+                    self._column += 2
+                    i += 2
                     continue
+                self._buffer = char
+                self.generate_token()
+                self._column += 1
+                i += 1
+                continue
 
             self._buffer = char
             exception = LexicalException(
