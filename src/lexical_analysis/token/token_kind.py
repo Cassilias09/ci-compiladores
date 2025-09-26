@@ -2,7 +2,6 @@ import enum
 
 
 class TokenKind(enum.Enum):
-
     PARENTHESIS_OPEN = 0
     PARENTHESIS_CLOSE = 1
 
@@ -18,3 +17,18 @@ class TokenKind(enum.Enum):
     EQUALS = 8
     SEMICOLON = 9
     IDENTIFIER = 10
+
+    IF = 11
+    ELSE = 12
+
+    WHILE = 13
+
+    RETURN = 14
+
+    BRACE_OPEN = 15
+    BRACE_CLOSE = 16
+
+    GREATER = 17
+    LESS = 18
+    EQUAL_EQUAL = 19
+

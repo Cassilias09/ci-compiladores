@@ -8,5 +8,21 @@ single_char_tokens = {
     '*': TokenKind.ASTERISK,
     '/': TokenKind.SLASH,
     '=': TokenKind.EQUALS,
-    ';': TokenKind.SEMICOLON
+    ';': TokenKind.SEMICOLON,
+    '{': TokenKind.BRACE_OPEN,
+    '}': TokenKind.BRACE_CLOSE,
+    '>': TokenKind.GREATER,
+    '<': TokenKind.LESS
 }
+
+multi_char_tokens = {
+    '==': TokenKind.EQUAL_EQUAL
+}
+
+keywords = {
+    'if': TokenKind.IF,
+    'else': TokenKind.ELSE,
+    'while': TokenKind.WHILE,
+    'return': TokenKind.RETURN
+}
+

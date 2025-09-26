@@ -1,6 +1,7 @@
 import sys
 from lexical_analysis.lexical_analyzer import LexicalAnalyzer
 from syntatic_analysis.syntactical_analyzer import SyntacticalAnalyzer
+from semantic_analysis.semantic_analyzer import SemanticAnalyzer
 from exceptions.exception_list import ExceptionList
 from arguments import Arguments
 
@@ -40,6 +41,15 @@ def main():
             print("Análise sintática concluída. Árvores sintáticas geradas:\n")
             syntactic_tree.display()
             print("\n")
+
+        if verbose:
+            print("\nIniciando análise semântica do arquivo:", file_path)
+
+        semantic_analyzer = SemanticAnalyzer(syntactic_tree)
+        semantic_analyzer.analyze()
+
+        if verbose:
+             print("Análise semântica concluída sem erros.\n")
 
         if verbose:
             print("Iniciando geração de código assembly...")
