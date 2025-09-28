@@ -18,9 +18,9 @@ class ComparisonNode(BaseNode):
         left_code = self.left.generate_code()
         right_code = self.right.generate_code()
         code = (
-            f"{right_code}\n"
+            f"{left_code}\n"
             + "push %rax\n"
-            + f"{left_code}\n"
+            + f"{right_code}\n"
             + "pop %rbx\n"
             + self._operator_to_code()
         )
@@ -29,10 +29,10 @@ class ComparisonNode(BaseNode):
     def _operator_to_code(self):
         match self.operator:
             case "==":
-                return "cmp %rbx, %rax\nxor %rcx, %rcx\nsetz %cl\nmov %rcx, %rax\n"
+                return "cmp %rax, %rbx\nsete %al\nmovzx %al, %rax\n"
             case "<":
-                return "cmp %rbx, %rax\nxor %rcx, %rcx\nsetl %cl\nmov %rcx, %rax\n"
+                return "cmp %rax, %rbx\nsetl %al\nmovzx %al, %rax\n"
             case ">":
-                return "cmp %rbx, %rax\nxor %rcx, %rcx\nsetg %cl\nmov %rcx, %rax\n"
+                return "cmp %rax, %rbx\nsetg %al\nmovzx %al, %rax\n"
             case _:
                 raise ValueError(f"Comparison operator '{self.operator}' not supported.")
