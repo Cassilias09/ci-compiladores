@@ -10,5 +10,5 @@ class ReturnNode(BaseNode):
 
     def generate_code(self):
         code = self.expression.generate_code()
-        code += "\nret\n"
+        code += "\nmov %rax, %rdi\n"
         return code
