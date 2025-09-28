@@ -8,4 +8,4 @@ class VariableNode(BaseNode):
         print((" " * identation) + f"Variable: {self.name}")
         
     def generate_code(self):
-        return f"mov {self.name}, %rax"
+        return f"    # TODO: context-aware variable access for {self.name}\n    mov {self.name}, %rax\n"

@@ -12,5 +12,5 @@ class AssignmentNode(BaseNode):
 
     def generate_code(self):
         code = self.expression.generate_code()
-        code += f"\nmov %rax, {self.variable.name}\n"
+        code += f"    # TODO: context-aware assignment for {self.variable.name}\n    mov %rax, {self.variable.name}\n"
         return code

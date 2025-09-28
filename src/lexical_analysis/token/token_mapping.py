@@ -12,7 +12,8 @@ single_char_tokens = {
     '{': TokenKind.BRACE_OPEN,
     '}': TokenKind.BRACE_CLOSE,
     '>': TokenKind.GREATER,
-    '<': TokenKind.LESS
+    '<': TokenKind.LESS,
+    ',': TokenKind.COMMA
 }
 
 multi_char_tokens = {
@@ -23,6 +24,9 @@ keywords = {
     'if': TokenKind.IF,
     'else': TokenKind.ELSE,
     'while': TokenKind.WHILE,
-    'return': TokenKind.RETURN
+    'return': TokenKind.RETURN,
+    'fun': TokenKind.FUN,
+    'var': TokenKind.VAR,
+    'main': TokenKind.MAIN
 }
 

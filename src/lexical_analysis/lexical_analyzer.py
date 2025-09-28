@@ -14,34 +14,36 @@ class LexicalAnalyzer:
         self._exceptions: list[Exception] = []
 
     def add_to_buffer(self, char: str):
-        """Add a character to the buffer."""
+        """Adiciona um caractere ao buffer."""
         self._buffer += char
         self._column += 1
 
     def reset_buffer(self):
-        """Reset the buffer."""
+        """Reseta o buffer."""
         self._buffer = ""
 
     def get_buffer(self) -> str:
-        """Get the current buffer content."""
+        """Obtém o conteúdo atual do buffer."""
         return self._buffer
 
     def get_tokens(self) -> list[Token]:
-        """Get the list of tokens."""
+        """Obtém a lista de tokens."""
         return self._tokens
 
     def add_token(self, token: Token):
-        """Add a token to the list of tokens."""
+        """Adiciona um token à lista de tokens."""
         self._tokens.append(token)
 
     def is_identifier_start(self, char: str) -> bool:
+        # Verifica se o caractere pode iniciar um identificador
         return char.isalpha()
 
     def is_identifier_part(self, char: str) -> bool:
+        # Verifica se o caractere pode fazer parte de um identificador
         return char.isalnum()
 
     def generate_token(self):
-        """Generate a token from the current buffer."""
+        """Gera um token a partir do buffer atual."""
         lexeme = self.get_buffer()
         if lexeme == "":
             return
@@ -105,7 +107,7 @@ class LexicalAnalyzer:
         self.reset_buffer()
 
     def analyze(self, source_code: str):
-        """Analyze the source code and generate tokens."""
+        """Analisa o código-fonte e gera os tokens."""
         self.reset_buffer()
         i = 0
         length = len(source_code)

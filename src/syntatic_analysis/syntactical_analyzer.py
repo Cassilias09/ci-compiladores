@@ -27,61 +27,161 @@ class SyntacticalAnalyzer:
     # ---------------- PARSE PRINCIPAL ----------------
     def parse(self):
         """
-        <programa> ::= <decl>* '{' <cmd>* 'return' <exp> ';' '}'
+        <Programa> ::= (<Decl>)* 'main' '{' (<Cmd>)* 'return' <Exp> ';' '}'
+        <Decl> ::= <VarDecl> | <FunDecl>
         """
         declarations = []
-        while self._check_token() and self._check_token().kind == TokenKind.IDENTIFIER:
-            decl = self._parse_declaration()
+        while self._check_token() and self._check_token().kind in (TokenKind.IDENTIFIER, TokenKind.FUN, TokenKind.VAR):
+            if self._check_token().kind == TokenKind.FUN:
+                decl = self._parse_function_declaration()
+            elif self._check_token().kind == TokenKind.VAR:
+                decl = self._parse_global_var_declaration()
+            else:
+                decl = self._parse_declaration()
             if decl:
                 declarations.append(decl)
             else:
                 self.advance()
 
-        if self._check_token() and self._check_token().kind == TokenKind.BRACE_OPEN:
-            self._read_token()
+    # Espera a palavra-chave 'main'
+        if not self._check_token() or self._check_token().kind != TokenKind.MAIN:
+            self._except(self._check_token())
+            if len(self._exceptions) != 0:
+                raise ExceptionList(process="Syntactical Analysis", exceptions=self._exceptions)
+            return self.code_start
+        self._read_token()
+        if not self._check_token() or self._read_token().kind != TokenKind.BRACE_OPEN:
+            self._except(self._check_token())
+            if len(self._exceptions) != 0:
+                raise ExceptionList(process="Syntactical Analysis", exceptions=self._exceptions)
+            return self.code_start
 
-            commands = []
-            while self._check_token() and self._check_token().kind != TokenKind.RETURN:
-                cmd = self._parse_cmd()
-                if cmd:
-                    commands.append(cmd)
-                else:
-                    if self._check_token():
-                        self.advance()
-                    else:
-                        break
-
-            if not self._check_token() or self._check_token().kind != TokenKind.RETURN:
-                self._except(self._check_token())
+        commands = []
+        while self._check_token() and self._check_token().kind != TokenKind.RETURN:
+            cmd = self._parse_cmd()
+            if cmd:
+                commands.append(cmd)
             else:
-                return_node = self._parse_return()
-                if not self._check_token() or self._check_token().kind != TokenKind.BRACE_CLOSE:
-                    self._except(self._check_token())
-                else:
-                    self._read_token()  
-
-                block = BlockNode(commands + [return_node])
-                program = ProgramNode(declarations, block)
-                self.code_start._variables = [d.name for d in declarations]
-                self.code_start.add_child(program)
-
-                if len(self._exceptions) != 0:
-                    raise ExceptionList(process="Syntactical Analysis", exceptions=self._exceptions)
-                return self.code_start
-
-        while self._check_token():
-            try:
-                expr = self._parse_expression()
-                if expr:
-                    self.code_start.add_child(expr)
-            except Exception as e:
-                self._exceptions.append(e)
                 if self._check_token():
                     self.advance()
+                else:
+                    break
+
+        if not self._check_token() or self._check_token().kind != TokenKind.RETURN:
+            self._except(self._check_token())
+        else:
+            return_node = self._parse_return()
+            if not self._check_token() or self._check_token().kind != TokenKind.BRACE_CLOSE:
+                self._except(self._check_token())
+            else:
+                self._read_token()
+
+            block = BlockNode(commands + [return_node])
+            program = ProgramNode(declarations, block)
+            self.code_start._variables = [getattr(d, 'name', None) for d in declarations if hasattr(d, 'name')]
+            self.code_start.add_child(program)
+
+            if len(self._exceptions) != 0:
+                raise ExceptionList(process="Syntactical Analysis", exceptions=self._exceptions)
+            return self.code_start
 
         if len(self._exceptions) != 0:
             raise ExceptionList(process="Syntactical Analysis", exceptions=self._exceptions)
         return self.code_start
+
+    def _parse_function_declaration(self):
+        # 'fun' <ident> '(' <ParamSeq>? ')' '{' (<LocalVarDecl>)* (<Cmd>)* 'return' <Exp> ';' '}'
+        if not self._check_token() or self._read_token().kind != TokenKind.FUN:
+            self._except(self._check_token())
+            return None
+        name_token = self._read_token()
+        if not name_token or name_token.kind != TokenKind.IDENTIFIER:
+            self._except(name_token)
+            return None
+        if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_OPEN:
+            self._except(self._check_token())
+            return None
+        params = []
+        if self._check_token() and self._check_token().kind == TokenKind.IDENTIFIER:
+            params.append(self._read_token().lexeme)
+            while self._check_token() and self._check_token().kind == TokenKind.COMMA:
+                self._read_token()
+                if self._check_token() and self._check_token().kind == TokenKind.IDENTIFIER:
+                    params.append(self._read_token().lexeme)
+                else:
+                    self._except(self._check_token())
+                    break
+        if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
+            self._except(self._check_token())
+            return None
+        if not self._check_token() or self._read_token().kind != TokenKind.BRACE_OPEN:
+            self._except(self._check_token())
+            return None
+        local_vars = []
+        while self._check_token() and self._check_token().kind == TokenKind.VAR:
+            local_var = self._parse_local_var_declaration()
+            if local_var:
+                local_vars.append(local_var)
+            else:
+                self.advance()
+        commands = []
+        while self._check_token() and self._check_token().kind not in (TokenKind.RETURN, TokenKind.BRACE_CLOSE):
+            cmd = self._parse_cmd()
+            if cmd:
+                commands.append(cmd)
+            else:
+                if self._check_token():
+                    self.advance()
+                else:
+                    break
+        if not self._check_token() or self._check_token().kind != TokenKind.RETURN:
+            self._except(self._check_token())
+            return None
+        return_node = self._parse_return()
+        if not self._check_token() or self._check_token().kind != TokenKind.BRACE_CLOSE:
+            self._except(self._check_token())
+            return None
+        self._read_token()
+        from syntatic_analysis.nodes.declaration_node import FunDeclNode
+        return FunDeclNode(name_token.lexeme, params, local_vars, commands, return_node)
+
+    def _parse_local_var_declaration(self):
+        # 'var' <ident> '=' <exp> ';'
+        if not self._check_token() or self._read_token().kind != TokenKind.VAR:
+            self._except(self._check_token())
+            return None
+        ident_token = self._read_token()
+        if not ident_token or ident_token.kind != TokenKind.IDENTIFIER:
+            self._except(ident_token)
+            return None
+        if not self._check_token() or self._read_token().kind != TokenKind.EQUALS:
+            self._except(self._check_token())
+            return None
+        expr = self._parse_expression()
+        if not self._check_token() or self._read_token().kind != TokenKind.SEMICOLON:
+            self._except(self._check_token())
+            return None
+        from syntatic_analysis.nodes.declaration_node import LocalVarDeclNode
+        return LocalVarDeclNode(ident_token.lexeme, expr)
+
+    def _parse_global_var_declaration(self):
+        # 'var' <ident> '=' <exp> ';'
+        if not self._check_token() or self._read_token().kind != TokenKind.VAR:
+            self._except(self._check_token())
+            return None
+        ident_token = self._read_token()
+        if not ident_token or ident_token.kind != TokenKind.IDENTIFIER:
+            self._except(ident_token)
+            return None
+        if not self._check_token() or self._read_token().kind != TokenKind.EQUALS:
+            self._except(self._check_token())
+            return None
+        expr = self._parse_expression()
+        if not self._check_token() or self._read_token().kind != TokenKind.SEMICOLON:
+            self._except(self._check_token())
+            return None
+        from syntatic_analysis.nodes.declaration_node import GlobalVarDeclNode
+        return GlobalVarDeclNode(ident_token.lexeme, expr)
 
     # -- Commands --
     def _parse_cmd(self):
@@ -301,7 +401,7 @@ class SyntacticalAnalyzer:
             node = BinaryOperationNode(node, op.lexeme, right)
         return node
 
-    # <prim> ::= <num> | <ident> | '(' <exp> ')'
+    # <prim> ::= <num> | <ident> | '(' <exp> ')' | <FunCall>
     def _parse_prim(self):
         token = self._read_token()
         if not token:
@@ -311,7 +411,22 @@ class SyntacticalAnalyzer:
         if token.kind == TokenKind.LITERAL:
             return LiteralNode(token.lexeme)
         elif token.kind == TokenKind.IDENTIFIER:
-            return VariableNode(token.lexeme)
+            # Lookahead for function call
+            if self._check_token() and self._check_token().kind == TokenKind.PARENTHESIS_OPEN:
+                self._read_token()  # consume '('
+                args = []
+                if self._check_token() and self._check_token().kind != TokenKind.PARENTHESIS_CLOSE:
+                    args.append(self._parse_expression())
+                    while self._check_token() and self._check_token().kind == TokenKind.COMMA:
+                        self._read_token()
+                        args.append(self._parse_expression())
+                if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
+                    self._except(self._check_token())
+                    return None
+                from syntatic_analysis.nodes.declaration_node import FunCallNode
+                return FunCallNode(token.lexeme, args)
+            else:
+                return VariableNode(token.lexeme)
         elif token.kind == TokenKind.PARENTHESIS_OPEN:
             expr = self._parse_expression()
             if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
