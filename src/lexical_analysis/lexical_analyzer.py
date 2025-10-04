@@ -1,7 +1,7 @@
 from exceptions.exception_list import ExceptionList
 from exceptions.lexical_exception import LexicalException
 from lexical_analysis.token.token import Token
-from lexical_analysis.token.token_mapping import single_char_tokens
+from lexical_analysis.token.token_mapping import single_char_tokens, multi_char_tokens, keywords
 from lexical_analysis.token.token_kind import TokenKind
 
 
@@ -55,12 +55,21 @@ class LexicalAnalyzer:
             )
         elif self.is_identifier_start(lexeme[0]):
             if all(self.is_identifier_part(c) for c in lexeme):
-                token = Token(
-                    line=self._line,
-                    column=self._column - len(lexeme) + 1,
-                    kind=TokenKind.IDENTIFIER,
-                    lexeme=lexeme,
-                )
+                if lexeme in keywords:
+                    token_kind = keywords[lexeme]
+                    token = Token(
+                        line=self._line,
+                        column=self._column - len(lexeme) + 1,
+                        kind=token_kind,
+                        lexeme=lexeme,
+                    )
+                else:
+                    token = Token(
+                        line=self._line,
+                        column=self._column - len(lexeme) + 1,
+                        kind=TokenKind.IDENTIFIER,
+                        lexeme=lexeme,
+                    )
             else:
                 exception = LexicalException(
                     f"Identificador inválido '{lexeme}'.",
@@ -70,6 +79,13 @@ class LexicalAnalyzer:
                 self._exceptions.append(exception)
                 self.reset_buffer()
                 return
+        elif lexeme in multi_char_tokens:
+            token = Token(
+                line=self._line,
+                column=self._column - len(lexeme) + 1,
+                kind=multi_char_tokens[lexeme],
+                lexeme=lexeme,
+            )
         elif lexeme in single_char_tokens:
             token_kind = single_char_tokens[lexeme]
             token = Token(
@@ -150,6 +166,12 @@ class LexicalAnalyzer:
                 continue
 
             if char in single_char_tokens:
+                if i + 1 < length and (char + source_code[i + 1]) in multi_char_tokens:
+                    self._buffer = char + source_code[i + 1]
+                    self.generate_token()
+                    self._column += 2
+                    i += 2
+                    continue
                 self._buffer = char
                 self.generate_token()
                 self._column += 1
