@@ -1,0 +1,12 @@
+x = 5;
+y = 12;
+z = 0;
+{
+    while (y > x) {
+        if (x * z < y + 3) {
+            z = z + 1;
+        }
+        x = x + 1;
+    }
+    return z;
+}
