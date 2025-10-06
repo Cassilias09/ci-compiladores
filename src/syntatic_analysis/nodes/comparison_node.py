@@ -34,5 +34,11 @@ class ComparisonNode(BaseNode):
                 return "cmp %rax, %rbx\nsetl %al\nmovzx %al, %rax\n"
             case ">":
                 return "cmp %rax, %rbx\nsetg %al\nmovzx %al, %rax\n"
+            case "<=":
+                return "cmp %rax, %rbx\nsetle %al\nmovzx %al, %rax\n"
+            case ">=":
+                return "cmp %rax, %rbx\nsetge %al\nmovzx %al, %rax\n"
+            case "!=":
+                return "cmp %rax, %rbx\nsetne %al\nmovzx %al, %rax\n"
             case _:
                 raise ValueError(f"Comparison operator '{self.operator}' not supported.")

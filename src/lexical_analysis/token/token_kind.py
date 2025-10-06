@@ -31,4 +31,10 @@ class TokenKind(enum.Enum):
     GREATER = 17
     LESS = 18
     EQUAL_EQUAL = 19
+    NOT_EQUAL = 20
+    GREATER_EQUAL = 21
+    LESS_EQUAL = 22
 
+    AND = 23
+    OR = 24
+    NOT = 25

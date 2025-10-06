@@ -12,11 +12,17 @@ single_char_tokens = {
     '{': TokenKind.BRACE_OPEN,
     '}': TokenKind.BRACE_CLOSE,
     '>': TokenKind.GREATER,
-    '<': TokenKind.LESS
+    '<': TokenKind.LESS,
+    '!': TokenKind.NOT
 }
 
 multi_char_tokens = {
-    '==': TokenKind.EQUAL_EQUAL
+    '==': TokenKind.EQUAL_EQUAL,
+    '!=': TokenKind.NOT_EQUAL,
+    '>=': TokenKind.GREATER_EQUAL,
+    '<=': TokenKind.LESS_EQUAL,
+    '&&': TokenKind.AND,
+    '||': TokenKind.OR
 }
 
 keywords = {

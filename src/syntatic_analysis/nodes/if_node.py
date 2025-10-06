@@ -1,4 +1,5 @@
 from syntatic_analysis.nodes import BaseNode
+from syntatic_analysis.utils.label_generator import LabelGenerator
 
 class IfNode(BaseNode):
     def __init__(self, condition, then_body, else_body=None):
@@ -22,8 +23,8 @@ class IfNode(BaseNode):
         then_code = "\n".join(cmd.generate_code() for cmd in self.then_body)
         else_code = "\n".join(cmd.generate_code() for cmd in self.else_body)
 
-        label_else = "Lelse"
-        label_end = "Lend"
+        label_else = LabelGenerator.new("Lelse")
+        label_end = LabelGenerator.new("Lend")
 
         code = (
             cond_code
