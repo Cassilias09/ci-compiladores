@@ -1,4 +1,5 @@
 from syntatic_analysis.nodes import BaseNode
+from syntatic_analysis.utils.label_generator import LabelGenerator
 
 
 class BinaryOperationNode(BaseNode):
@@ -46,5 +47,28 @@ class BinaryOperationNode(BaseNode):
                 return "add %rbx, %rax\n"
             case "-":
                 return "sub %rbx, %rax\n"
+            case "&&":
+                label_end = LabelGenerator.new("LandEnd")
+                code = (
+                    f"cmp $0, %rbx\n" 
+                    f"je {label_end}\n"
+                    f"cmp $0, %rax\n"
+                    f"setne %al\n"  
+                    f"movzx %al, %rax\n" 
+                    f"{label_end}:\n"
+                )
+                return code
+            case "||":
+                label_end = LabelGenerator.new("LorEnd")
+                code = (
+                    f"cmp $0, %rbx\n"
+                    f"setne %al\n"
+                    f"movzx %al, %rbx\n"
+                    f"cmp $1, %rbx\n" 
+                    f"je {label_end}\n"
+                    f"{label_end}:\n"
+                    f"mov %rbx, %rax\n" 
+                )
+                return code
             case _:
                 raise ValueError(f"Operator '{self.operator}' not supported.")

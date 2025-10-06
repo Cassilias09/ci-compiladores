@@ -12,9 +12,9 @@ from syntatic_analysis.nodes.while_node import WhileNode
 from syntatic_analysis.nodes.assignment_node import AssignmentNode
 from syntatic_analysis.nodes.return_node import ReturnNode
 from syntatic_analysis.nodes.block_node import BlockNode
+from syntatic_analysis.nodes.unary_operation_node import UnaryOperationNode 
 from exceptions.syntactical_exception import SyntacticalException
 from exceptions.exception_list import ExceptionList
-
 
 class SyntacticalAnalyzer:
     def __init__(self, tokens):
@@ -374,16 +374,43 @@ class SyntacticalAnalyzer:
 
     # -- Expressions --
     def _parse_expression(self):
-        return self._parse_exp_comp()
+        #return self._parse_exp_comp()
+        return self._parse_exp_l_or()
+    
+    def _parse_exp_l_or(self):
+    # <exp_l_or> ::= <exp_l_and> (’||’ <exp_l_and>)*
+        node = self._parse_exp_l_and()
+        while self._check_token() and self._check_token().kind == TokenKind.OR: 
+            op = self._read_token()
+            right = self._parse_exp_l_and()
+            node = BinaryOperationNode(node, op.lexeme, right)
+        return node
 
-    # <exp> ::= <exp_a> (('<' | '>' | '==') <exp_a>)*
+    def _parse_exp_l_and(self):
+        # <exp_l_and> ::= <exp_comp> ('&&' <exp_comp>)*
+        node = self._parse_exp_comp()
+        while self._check_token() and self._check_token().kind == TokenKind.AND:
+            op = self._read_token()
+            right = self._parse_exp_comp()
+            node = BinaryOperationNode(node, op.lexeme, right)
+        return node
+
+    # <exp> ::= <exp_a> (('<' | '>' | '==' | '!=' | '>=' | '<=') <exp_a>)*
     def _parse_exp_comp(self):
         node = self._parse_exp_a()
-        while self._check_token() and self._check_token().kind in (
-            TokenKind.LESS, TokenKind.GREATER, TokenKind.EQUAL_EQUAL
-        ):
+        comp_tokens = (
+            TokenKind.LESS, 
+            TokenKind.GREATER, 
+            TokenKind.EQUAL_EQUAL,
+            TokenKind.NOT_EQUAL, 
+            TokenKind.GREATER_EQUAL, 
+            TokenKind.LESS_EQUAL 
+        )
+        while self._check_token() and self._check_token().kind in comp_tokens:
             op = self._read_token()
             right = self._parse_exp_a()
+            if right is None:
+                print(f"DEBUG: Falha ao analisar o operando direito para {op.lexeme}. Próximo token: {self._check_token()}")
             node = ComparisonNode(node, op.lexeme, right)
         return node
 
@@ -398,12 +425,23 @@ class SyntacticalAnalyzer:
 
     # <exp_m> ::= <prim> (('*' | '/') <prim>)*
     def _parse_exp_m(self):
-        node = self._parse_prim()
+        #node = self._parse_prim()
+        node = self._parse_exp_u()
         while self._check_token() and self._check_token().kind in (TokenKind.ASTERISK, TokenKind.SLASH):
             op = self._read_token()
-            right = self._parse_prim()
+            #right = self._parse_prim()
+            right = self._parse_exp_u()
             node = BinaryOperationNode(node, op.lexeme, right)
         return node
+    
+    # <exp_u> ::= '!' <exp_u> | <prim>
+    def _parse_exp_u(self):
+        token = self._check_token()
+        if token and token.kind == TokenKind.NOT:
+            op = self._read_token()
+            operand = self._parse_exp_u() 
+            return UnaryOperationNode(op.lexeme, operand)
+        return self._parse_prim()
 
     # <prim> ::= <num> | <ident> | '(' <exp> ')' | <FunCall>
     def _parse_prim(self):
