@@ -99,7 +99,7 @@ class FunCallNode(BaseNode):
         # Avalia argumentos em ordem reversa e os empilha
         for arg in reversed(self.args):
             code += arg.generate_code()  # Resultado da expressão vai para %rax
-            code += "push %rax\n"  # Empilha o argumento
+            code += "\npush %rax\n"  # Empilha o argumento
         code += f"call {self.name}\n"  # Chama a função
         if self.args:
             # Limpa os argumentos da pilha (N * 8 bytes)

@@ -33,19 +33,22 @@ class SemanticAnalyzer:
             return
         
         if isinstance(node, ProgramNode):
-            # Primeiro processe declarações globais (vars e funs)
-            for decl in node.declarations:
+            # Processamento de declarações globais (vars e funs)
+            for decl in node.global_vars:
+                self._visit(decl, table)
+            
+            for decl in node.functions:
                 self._visit(decl, table)
 
-            # Cria escopo para main
+            # Criação do escopo para main
             main_table = table.push_scope()
             self.current_local_offset = -8
             self.current_frame_min = 0
 
-            # Visite o bloco principal (node.result_expression é BlockNode)
+            # bloco principal (node.result_expression é BlockNode)
             self._visit(node.result_expression, main_table)
 
-            # Calcule frame_size para main se quiser anotar no nó
+            # Calculo do frame_size para main
             frame_size = -self.current_frame_min if self.current_frame_min < 0 else 0
             setattr(node.result_expression, "frame_size", frame_size)
 
@@ -57,7 +60,7 @@ class SemanticAnalyzer:
         elif isinstance(node, BlockNode):
             block_table = table.push_scope()
 
-            # Primeira passagem: declare todas as LocalVarDeclNode
+            # Primeira passagem: declaração dos LocalVarDeclNode
             for stmt in node.statements:
                 if isinstance(stmt, LocalVarDeclNode):
                     if block_table.lookup(stmt.name):
@@ -107,8 +110,8 @@ class SemanticAnalyzer:
 
             fun_table = table.push_scope()
 
-            # parâmetros (RBP+24, +32, ...)
-            param_offset = 24
+            # parâmetros (RBP+16, +24, +32, ...)
+            param_offset = 16
             for param in node.params:
                 fun_table.declare(param, 'param', offset=param_offset)
                 param_offset += 8

@@ -30,16 +30,18 @@ class SyntacticalAnalyzer:
         <Programa> ::= (<Decl>)* 'main' '{' (<Cmd>)* 'return' <Exp> ';' '}'
         <Decl> ::= <VarDecl> | <FunDecl>
         """
-        declarations = []
-        while self._check_token() and self._check_token().kind in (TokenKind.IDENTIFIER, TokenKind.FUN, TokenKind.VAR):
+        function_declarations = []
+        global_variable_declarations = []
+
+        while self._check_token() and self._check_token().kind in (TokenKind.FUN, TokenKind.VAR):
             if self._check_token().kind == TokenKind.FUN:
                 decl = self._parse_function_declaration()
+                if decl:
+                    function_declarations.append(decl)
             elif self._check_token().kind == TokenKind.VAR:
                 decl = self._parse_global_var_declaration()
-            else:
-                decl = self._parse_declaration()
-            if decl:
-                declarations.append(decl)
+                if decl:
+                    global_variable_declarations.append(decl)
             else:
                 self.advance()
 
@@ -77,8 +79,8 @@ class SyntacticalAnalyzer:
                 self._read_token()
 
             block = BlockNode(commands + [return_node])
-            program = ProgramNode(declarations, block)
-            self.code_start._variables = [getattr(d, 'name', None) for d in declarations if hasattr(d, 'name')]
+            program = ProgramNode(global_variable_declarations, function_declarations, block)
+            self.code_start._variables = [getattr(d, 'name', None) for d in global_variable_declarations if hasattr(d, 'name')]
             self.code_start.add_child(program)
 
             if len(self._exceptions) != 0:

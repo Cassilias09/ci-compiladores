@@ -21,18 +21,11 @@ class IfNode(BaseNode):
     def generate_code(self):
         cond_code = self.condition.generate_code()
 
-        def gen_cmd(cmd, local_offset=[-8]):
-            if isinstance(cmd, LocalVarDeclNode):
-                code = cmd.generate_code(local_offset[0])
-                local_offset[0] -= 8
-                return code
-            else:
-                return cmd.generate_code()
-
-        then_code = "\n".join(gen_cmd(cmd) for cmd in self.then_body.statements)
+        then_code = self.then_body.generate_code()
+        
         else_code = ""
         if self.else_body:
-            else_code = "\n".join(gen_cmd(cmd) for cmd in self.else_body.statements)
+            else_code = self.else_body.generate_code()
 
         label_else = "Lelse"
         label_end = "Lend"
