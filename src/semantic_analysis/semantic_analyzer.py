@@ -1,6 +1,8 @@
 from syntatic_analysis.nodes.declaration_node import DeclarationNode, FunDeclNode, LocalVarDeclNode, GlobalVarDeclNode, FunCallNode
 from syntatic_analysis.nodes.variable_node import VariableNode
 from syntatic_analysis.nodes.binary_operation_node import BinaryOperationNode
+from syntatic_analysis.nodes.logical_operation_node import LogicalOperationNode, LogicalAndNode, LogicalOrNode
+from syntatic_analysis.nodes.unary_operation_node import UnaryOperationNode
 from syntatic_analysis.nodes.comparison_node import ComparisonNode
 from syntatic_analysis.nodes.assignment_node import AssignmentNode
 from syntatic_analysis.nodes.code_start_node import CodeStartNode
@@ -90,10 +92,12 @@ class SemanticAnalyzer:
             self._visit(node.then_body, table)
             if node.else_body:
                 self._visit(node.else_body, table)
+            return
                 
         elif isinstance(node, WhileNode):
             self._visit(node.condition, table)
             self._visit(node.block, table)
+            return
             
         elif isinstance(node, GlobalVarDeclNode):
             if table.lookup(node.name):
@@ -101,6 +105,7 @@ class SemanticAnalyzer:
             else:
                 table.declare(node.name, 'global')
             self._visit(node.expression, table)
+            return
             
         elif isinstance(node, FunDeclNode):
             if table.lookup(node.name):
@@ -148,6 +153,7 @@ class SemanticAnalyzer:
 
         elif isinstance(node, LocalVarDeclNode):
             self._visit(node.expression, table)
+            return
         
         elif isinstance(node, DeclarationNode):
             if table.lookup(node.name):
@@ -155,6 +161,7 @@ class SemanticAnalyzer:
             else:
                 table.declare(node.name, 'global')
             self._visit(node.expression, table)
+            return
             
         elif isinstance(node, AssignmentNode):
             var_entry = table.lookup(node.variable.name)
@@ -166,6 +173,7 @@ class SemanticAnalyzer:
                 if hasattr(var_entry, "offset"):
                     node.offset = var_entry.offset
             self._visit(node.expression, table)
+            return
             
         elif isinstance(node, VariableNode):
             var_entry = table.lookup(node.name)
@@ -175,6 +183,7 @@ class SemanticAnalyzer:
                 node.entry = var_entry
                 if hasattr(var_entry, "offset"):
                     node.offset = var_entry.offset
+            return
                     
         elif isinstance(node, FunCallNode):
             fun_entry = table.lookup(node.name)
@@ -187,13 +196,20 @@ class SemanticAnalyzer:
                     self.errors.append(f"Função '{node.name}' chamada com {actual} argumento(s), mas espera {expected}.")
             for arg in node.args:
                 self._visit(arg, table)
+            return
                 
-        elif isinstance(node, (BinaryOperationNode, ComparisonNode)):
+        elif isinstance(node, (BinaryOperationNode, ComparisonNode, LogicalOperationNode, LogicalAndNode, LogicalOrNode)):
             self._visit(node.left, table)
             self._visit(node.right, table)
+            return
+        
+        elif isinstance(node, UnaryOperationNode):
+            self._visit(node.operand, table)
+            return
             
         elif isinstance(node, ReturnNode):
             self._visit(node.expression, table)
+            return
             
         else:
             for child in getattr(node, "children", []):

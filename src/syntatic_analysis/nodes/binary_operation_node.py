@@ -28,47 +28,28 @@ class BinaryOperationNode(BaseNode):
     def generate_code(self):
         left_code = self.left.generate_code()
         right_code = self.right.generate_code()
+        
+        # --- PADRÃO UNIFICADO DE AVALIAÇÃO ---
         code = (
-            f"{right_code}\n"
-            + "push %rax\n"
-            + f"{left_code}\n"
-            + "pop %rbx\n"
+            f"{left_code}\n"
+            + "    push %rax\n"
+            + f"{right_code}\n"
+            + "    mov %rax, %rbx\n"
+            + "    pop %rax\n"
             + self._operator_to_code()
         )
         return code
 
     def _operator_to_code(self):
+        # Agora as operações estão na ordem correta: %rax (A) op %rbx (B)
         match self.operator:
             case "*":
-                return "mul %rbx\n"
+                return "    imul %rbx, %rax\n" # Usa imul para multiplicação segura
             case "/":
-                return "xor %rdx, %rdx\n" + "div %rbx\n"
+                return "    xor %rdx, %rdx\n" + "    div %rbx\n" # A em %rax / B em %rbx
             case "+":
-                return "add %rbx, %rax\n"
+                return "    add %rbx, %rax\n" # A + B
             case "-":
-                return "sub %rbx, %rax\n"
-            case "&&":
-                label_end = LabelGenerator.new("LandEnd")
-                code = (
-                    f"cmp $0, %rbx\n" 
-                    f"je {label_end}\n"
-                    f"cmp $0, %rax\n"
-                    f"setne %al\n"  
-                    f"movzx %al, %rax\n" 
-                    f"{label_end}:\n"
-                )
-                return code
-            case "||":
-                label_end = LabelGenerator.new("LorEnd")
-                code = (
-                    f"cmp $0, %rbx\n"
-                    f"setne %al\n"
-                    f"movzx %al, %rbx\n"
-                    f"cmp $1, %rbx\n" 
-                    f"je {label_end}\n"
-                    f"{label_end}:\n"
-                    f"mov %rbx, %rax\n" 
-                )
-                return code
+                return "    sub %rbx, %rax\n" # A - B
             case _:
                 raise ValueError(f"Operator '{self.operator}' not supported.")
