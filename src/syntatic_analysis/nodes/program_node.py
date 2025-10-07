@@ -20,18 +20,10 @@ class ProgramNode(BaseNode):
             
         # 2. Início do bloco principal 'main'
         code += ".globl main\nmain:\n"
-        # Prólogo simples para a função main (embora não tenha variáveis locais neste exemplo)
-        code += "    push %rbp\n    mov %rsp, %rbp\n"
+        # Prólogo simples para a função main
+        code += "push %rbp\nmov %rsp, %rbp\n"
         
         # 3. Geração de código para o corpo do 'main' (comandos e expressão de retorno)
         code += self.result_expression.generate_code()
-        
-        # 4. Saída do programa usando syscall Linux
-        # O resultado da expressão final já está em %rax
-        # Move o status de saída (%rax) para o primeiro argumento (%rdi)
-        code += "    mov %rax, %rdi\n"
-        # Move o número da syscall 'exit' (60) para %rax
-        code += "    mov $60, %rax\n"
-        # Executa a chamada de sistema
-        code += "    syscall\n"
         return code
+    

@@ -2,7 +2,7 @@ from lexical_analysis.token.token import Token
 from lexical_analysis.token.token_kind import TokenKind
 from syntatic_analysis.nodes.binary_operation_node import BinaryOperationNode
 from syntatic_analysis.nodes.code_start_node import CodeStartNode
-from syntatic_analysis.nodes.declaration_node import DeclarationNode
+from syntatic_analysis.nodes.declaration_node import DeclarationNode, FunCallNode, FunDeclNode, GlobalVarDeclNode, LocalVarDeclNode
 from syntatic_analysis.nodes.literal_node import LiteralNode
 from syntatic_analysis.nodes.program_node import ProgramNode
 from syntatic_analysis.nodes.variable_node import VariableNode
@@ -43,7 +43,7 @@ class SyntacticalAnalyzer:
             else:
                 self.advance()
 
-    # Espera a palavra-chave 'main'
+        # Espera a palavra-chave 'main'
         if not self._check_token() or self._check_token().kind != TokenKind.MAIN:
             self._except(self._check_token())
             if len(self._exceptions) != 0:
@@ -142,7 +142,6 @@ class SyntacticalAnalyzer:
             self._except(self._check_token())
             return None
         self._read_token()
-        from syntatic_analysis.nodes.declaration_node import FunDeclNode
         return FunDeclNode(name_token.lexeme, params, local_vars, commands, return_node)
 
     def _parse_local_var_declaration(self):
@@ -161,7 +160,6 @@ class SyntacticalAnalyzer:
         if not self._check_token() or self._read_token().kind != TokenKind.SEMICOLON:
             self._except(self._check_token())
             return None
-        from syntatic_analysis.nodes.declaration_node import LocalVarDeclNode
         return LocalVarDeclNode(ident_token.lexeme, expr)
 
     def _parse_global_var_declaration(self):
@@ -180,7 +178,6 @@ class SyntacticalAnalyzer:
         if not self._check_token() or self._read_token().kind != TokenKind.SEMICOLON:
             self._except(self._check_token())
             return None
-        from syntatic_analysis.nodes.declaration_node import GlobalVarDeclNode
         return GlobalVarDeclNode(ident_token.lexeme, expr)
 
     # -- Commands --
@@ -197,6 +194,8 @@ class SyntacticalAnalyzer:
             return self._parse_assignment()
         elif token.kind == TokenKind.BRACE_OPEN:
             return self._parse_block()
+        elif token.kind == TokenKind.VAR:
+            return self._parse_local_var_declaration()
         else:
             self._except(token)
             self.advance()
@@ -256,7 +255,9 @@ class SyntacticalAnalyzer:
                 self._except(self._check_token())
                 return None
 
-        return IfNode(condition, then_cmds, else_cmds)
+        then_block = BlockNode(then_cmds)
+        else_block = BlockNode(else_cmds) if else_cmds else None
+        return IfNode(condition, then_block, else_block)
 
     # 'while' '(' <exp> ')' '{' <cmd>* '}'
     def _parse_while(self):
@@ -293,7 +294,8 @@ class SyntacticalAnalyzer:
             self._except(self._check_token())
             return None
 
-        return WhileNode(condition, body_cmds)
+        body_block = BlockNode(body_cmds)
+        return WhileNode(condition, body_block)
 
     # <atrib> ::= <var> '=' <exp> ';'
     def _parse_assignment(self):
@@ -423,7 +425,6 @@ class SyntacticalAnalyzer:
                 if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
                     self._except(self._check_token())
                     return None
-                from syntatic_analysis.nodes.declaration_node import FunCallNode
                 return FunCallNode(token.lexeme, args)
             else:
                 return VariableNode(token.lexeme)

@@ -1,4 +1,5 @@
 from syntatic_analysis.nodes import BaseNode
+from syntatic_analysis.nodes.declaration_node import LocalVarDeclNode
 
 class BlockNode(BaseNode):
     def __init__(self, statements: list):
@@ -10,4 +11,10 @@ class BlockNode(BaseNode):
             stmt.display(identation + 1)
 
     def generate_code(self):
-        return "\n".join(stmt.generate_code() for stmt in self.statements)
+        code = ""
+        for stmt in self.statements:
+            if isinstance(stmt, LocalVarDeclNode):
+                code += stmt.generate_code(getattr(stmt, "offset", None))
+            else:
+                code += stmt.generate_code()
+        return code

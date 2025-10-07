@@ -1,0 +1,10 @@
+main {
+    var x = 2;
+    var y = x + 1;
+    var z = 5;
+    if (z > 0) {
+        var w = z - 1;
+        y = y + w;
+    }
+    return y;
+}

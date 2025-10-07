@@ -35,11 +35,11 @@ class LexicalAnalyzer:
         self._tokens.append(token)
 
     def is_identifier_start(self, char: str) -> bool:
-        # Verifica se o caractere pode iniciar um identificador
+        """Verifica se o caractere pode iniciar um identificador"""
         return char.isalpha()
 
     def is_identifier_part(self, char: str) -> bool:
-        # Verifica se o caractere pode fazer parte de um identificador
+        """Verifica se o caractere pode fazer parte de um identificador"""
         return char.isalnum()
 
     def generate_token(self):

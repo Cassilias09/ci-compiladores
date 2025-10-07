@@ -19,15 +19,16 @@ class FunDeclNode(BaseNode):
     def generate_code(self):
         code = f"{self.name}:\n"
         # Prólogo da Função
-        code += "    push %rbp\n"
-        code += "    mov %rsp, %rbp\n"
+        code += "push %rbp\n"
+        code += "mov %rsp, %rbp\n"
         if self.local_vars:
             # Aloca espaço para variáveis locais (L * 8 bytes)
-            code += f"    sub ${len(self.local_vars) * 8}, %rsp\n"
+            code += f"sub ${len(self.local_vars) * 8}, %rsp\n"
         # Inicialização das variáveis locais
         for idx, var in enumerate(self.local_vars):
             # Offset: -8, -16, ... (abaixo do RBP)
-            offset = -8 * (idx + 1)
+            # OBS: var.offset já deve ter sido preenchido pelo SemanticAnalyzer, mas mantemos compatibilidade
+            offset = getattr(var, "offset", -8 * (idx + 1))
             code += var.generate_code(offset)
         # Geração de código para comandos
         for cmd in self.commands:
@@ -35,25 +36,35 @@ class FunDeclNode(BaseNode):
         # Geração de código para a expressão de retorno (o resultado deve estar em %rax)
         code += self.return_node.generate_code()
         # Epílogo da Função
-        code += "    mov %rbp, %rsp\n"  # Desaloca variáveis locais (movimenta RSP para RBP)
-        code += "    pop %rbp\n"  # Restaura o RBP do chamador
-        code += "    ret\n"  # Retorna ao chamador
+        code += "mov %rbp, %rsp\n"  # Desaloca variáveis locais (movimenta RSP para RBP)
+        code += "pop %rbp\n"  # Restaura o RBP do chamador
+        code += "ret\n"  # Retorna ao chamador
         return code
 
 class LocalVarDeclNode(BaseNode):
     def __init__(self, name, expression):
         self.name = name
         self.expression = expression
+        self.offset = None  # será definido pelo SemanticAnalyzer depois
 
     def display(self, identation: int = 0):
         print((" " * identation) + f"LocalVar: {self.name}")
         self.expression.display(identation + 1)
 
-    def generate_code(self, offset):
+    def generate_code(self, offset=None):
+        # Se offset foi passado explicitamente, usa ele; senão tenta usar self.offset
+        off = offset if offset is not None else self.offset
+        if off is None:
+            print(f"Warning: offset for local variable '{self.name}' is not set.")
+            # Safety: se não temos offset, geramos código para variável global (fallback),
+            # mas idealmente isso não deve acontecer (semantic analyzer deve definir offset).
+            code = self.expression.generate_code()
+            code += f"\nmov %rax, {self.name}\n"
+            return code
         # Gera o código para calcular a expressão de inicialização (resultado em %rax)
         code = self.expression.generate_code()
         # Move o valor de %rax para o offset da variável local no frame de pilha
-        code += f"    mov %rax, {offset}(%rbp)\n"
+        code += f"\nmov %rax, {off}(%rbp)\n"
         return code
 
 class GlobalVarDeclNode(BaseNode):
@@ -69,7 +80,7 @@ class GlobalVarDeclNode(BaseNode):
         # Gera o código para calcular a expressão de inicialização (resultado em %rax)
         code = self.expression.generate_code()
         # Move o valor de %rax para o rótulo da variável global
-        code += f"    mov %rax, {self.name}\n"
+        code += f"\nmov %rax, {self.name}\n"
         return code
 
 class FunCallNode(BaseNode):
@@ -88,11 +99,11 @@ class FunCallNode(BaseNode):
         # Avalia argumentos em ordem reversa e os empilha
         for arg in reversed(self.args):
             code += arg.generate_code()  # Resultado da expressão vai para %rax
-            code += "    push %rax\n"  # Empilha o argumento
-        code += f"    call {self.name}\n"  # Chama a função
+            code += "push %rax\n"  # Empilha o argumento
+        code += f"call {self.name}\n"  # Chama a função
         if self.args:
             # Limpa os argumentos da pilha (N * 8 bytes)
-            code += f"    add ${len(self.args) * 8}, %rsp\n"
+            code += f"add ${len(self.args) * 8}, %rsp\n"
         # O resultado da chamada fica em %rax
         return code
         
