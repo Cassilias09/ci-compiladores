@@ -1,8 +1,28 @@
-m = 10;
-n = 4;
-{
-while (m + 1 > n) {
-m = m - n;
-}
-return m;
+var A = 5;
+var B = 10;
+var R = 0;
+var C = 0;
+main {
+    if (A >= 2 && B == 10) {
+        R = R + 5; 
+    }
+
+    if (A == 0 || B < 15) {
+        R = R + 40; 
+    }
+
+    if (A > 50 || B < 0) {
+        R = R + 2000;
+    }
+
+    if (!(A > 10)) {
+        R = R + 600;
+    }
+    
+    if (!(A == 5) || (B == 10)) {
+        C = R; 
+    } else {
+        C = C + 1; 
+    }
+    return C;
 }

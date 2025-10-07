@@ -26,6 +26,11 @@ class ProgramNode(BaseNode):
         
         # 2. Criação do ponto de entrada _start
         code += "_start:\n"
+        
+        # 2.1 Inicialização das variáveis globais
+        for global_var in self.global_vars:
+            code += global_var.generate_code()
+        
         code += "    call main\n\n"
         
         # 3. Geração de código para as funções definidas pelo usuário
@@ -45,4 +50,3 @@ class ProgramNode(BaseNode):
         # 5. Geração de código para o corpo do 'main'
         code += self.result_expression.generate_code()
         return code
-    

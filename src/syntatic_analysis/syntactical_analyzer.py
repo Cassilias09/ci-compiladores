@@ -12,9 +12,10 @@ from syntatic_analysis.nodes.while_node import WhileNode
 from syntatic_analysis.nodes.assignment_node import AssignmentNode
 from syntatic_analysis.nodes.return_node import ReturnNode
 from syntatic_analysis.nodes.block_node import BlockNode
+from syntatic_analysis.nodes.logical_operation_node import LogicalAndNode, LogicalOrNode
+from syntatic_analysis.nodes.unary_operation_node import UnaryOperationNode 
 from exceptions.syntactical_exception import SyntacticalException
 from exceptions.exception_list import ExceptionList
-
 
 class SyntacticalAnalyzer:
     def __init__(self, tokens):
@@ -373,69 +374,127 @@ class SyntacticalAnalyzer:
         return DeclarationNode(ident_token.lexeme, expr)
 
     # -- Expressions --
+    # Entry point for all expressions
     def _parse_expression(self):
-        return self._parse_exp_comp()
+        # Inicia com o operador de menor precedência: ||
+        return self._parse_or()
 
-    # <exp> ::= <exp_a> (('<' | '>' | '==') <exp_a>)*
-    def _parse_exp_comp(self):
-        node = self._parse_exp_a()
-        while self._check_token() and self._check_token().kind in (
-            TokenKind.LESS, TokenKind.GREATER, TokenKind.EQUAL_EQUAL
-        ):
+    # Precedência: || (menor)
+    def _parse_or(self):
+        node = self._parse_and() # Pega o operando do próximo nível (&&)
+        while self._check_token() and self._check_token().kind == TokenKind.OR:
             op = self._read_token()
-            right = self._parse_exp_a()
+            right = self._parse_and() # O lado direito também é do próximo nível
+            node = LogicalOrNode(node, op.lexeme, right)
+        return node
+
+    # Precedência: &&
+    def _parse_and(self):
+        node = self._parse_comparison() # Pega o operando do próximo nível (==, <, >)
+        while self._check_token() and self._check_token().kind == TokenKind.AND:
+            op = self._read_token()
+            right = self._parse_comparison()
+            node = LogicalAndNode(node, op.lexeme, right)
+        return node
+
+    # Precedência: ==, !=, <, <=, >, >=
+    def _parse_comparison(self):
+        node = self._parse_add_sub() # Pega o operando do próximo nível (+, -)
+        comp_tokens = (
+            TokenKind.EQUAL_EQUAL, TokenKind.NOT_EQUAL,
+            TokenKind.LESS, TokenKind.LESS_EQUAL,
+            TokenKind.GREATER, TokenKind.GREATER_EQUAL
+        )
+        while self._check_token() and self._check_token().kind in comp_tokens:
+            op = self._read_token()
+            right = self._parse_add_sub()
             node = ComparisonNode(node, op.lexeme, right)
         return node
 
-    # <exp_a> ::= <exp_m> (('+' | '-') <exp_m>)*
-    def _parse_exp_a(self): 
-        node = self._parse_exp_m()
+    # Precedência: +, -
+    def _parse_add_sub(self): 
+        node = self._parse_mul_div() # Pega o operando do próximo nível (*, /)
         while self._check_token() and self._check_token().kind in (TokenKind.PLUS, TokenKind.MINUS):
             op = self._read_token()
-            right = self._parse_exp_m()
+            right = self._parse_mul_div()
             node = BinaryOperationNode(node, op.lexeme, right)
         return node
 
-    # <exp_m> ::= <prim> (('*' | '/') <prim>)*
-    def _parse_exp_m(self):
-        node = self._parse_prim()
+    # Precedência: *, /
+    def _parse_mul_div(self):
+        node = self._parse_unary() # Pega o operando do próximo nível (!)
         while self._check_token() and self._check_token().kind in (TokenKind.ASTERISK, TokenKind.SLASH):
             op = self._read_token()
-            right = self._parse_prim()
+            right = self._parse_unary()
             node = BinaryOperationNode(node, op.lexeme, right)
         return node
+    
+    # Precedência: ! (operador unário)
+    def _parse_unary(self):
+        token = self._check_token()
+        if token and token.kind == TokenKind.NOT:
+            op = self._read_token()
+            # UnaryOperationNode não foi fornecido, mas a lógica seria esta:
+            from syntatic_analysis.nodes.unary_operation_node import UnaryOperationNode 
+            operand = self._parse_unary() 
+            return UnaryOperationNode(op.lexeme, operand)
+        return self._parse_primary()
 
-    # <prim> ::= <num> | <ident> | '(' <exp> ')' | <FunCall>
-    def _parse_prim(self):
+    def _parse_primary(self):
+        # REMOVIDO: token = self._check_token()
+
+        # Consome o próximo token e decide o que fazer com ele.
         token = self._read_token()
+
         if not token:
-            self._except(token)
+            self._except(None)
             return None
 
-        if token.kind == TokenKind.LITERAL:
+        # CASO 1: É um parêntese de abertura
+        if token.kind == TokenKind.PARENTHESIS_OPEN:
+            expr_node = self._parse_expression() # Recomeça a cadeia para a expressão interna
+            
+            # Verifica se o próximo token fecha o parêntese
+            closing_token = self._read_token()
+            if not closing_token or closing_token.kind != TokenKind.PARENTHESIS_CLOSE:
+                self._except(closing_token) # Erro se não encontrar ')'
+                return None
+                
+            return expr_node
+        
+        # CASO 2: É um número literal
+        elif token.kind == TokenKind.LITERAL:
             return LiteralNode(token.lexeme)
+
+        # CASO 3: É um identificador (variável ou chamada de função)
         elif token.kind == TokenKind.IDENTIFIER:
-            # Lookahead for function call
+            # Verifica se o PRÓXIMO token é '(', indicando uma chamada de função
             if self._check_token() and self._check_token().kind == TokenKind.PARENTHESIS_OPEN:
-                self._read_token()  # consume '('
+                self._read_token()  # Consome '('
+                
                 args = []
                 if self._check_token() and self._check_token().kind != TokenKind.PARENTHESIS_CLOSE:
-                    args.append(self._parse_expression())
-                    while self._check_token() and self._check_token().kind == TokenKind.COMMA:
-                        self._read_token()
+                    # Loop para analisar múltiplos argumentos separados por vírgula
+                    while True:
                         args.append(self._parse_expression())
+                        if self._check_token() and self._check_token().kind == TokenKind.COMMA:
+                            self._read_token() # Consome ',' e continua
+                        else:
+                            break # Sai do loop se não houver mais vírgulas
+                
+                # Verifica o ')' de fechamento da chamada de função
                 if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
                     self._except(self._check_token())
                     return None
+                
+                # Se você ainda não tem FunCallNode, precisará criá-lo
+                from syntatic_analysis.nodes.declaration_node import FunCallNode
                 return FunCallNode(token.lexeme, args)
             else:
+                # Se não for seguido por '(', é apenas uma variável
                 return VariableNode(token.lexeme)
-        elif token.kind == TokenKind.PARENTHESIS_OPEN:
-            expr = self._parse_expression()
-            if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
-                self._except(self._check_token())
-                return None
-            return expr
+                
+        # CASO 4: Token inesperado
         else:
             self._except(token)
             return None

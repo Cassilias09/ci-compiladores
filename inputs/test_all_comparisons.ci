@@ -1,0 +1,9 @@
+main {
+    var a = 2 < 5;
+    var b = 5 > 2;
+    var c = 3 == 3;
+    var d = 3 != 4;
+    var e = 5 >= 5;
+    var f = 2 <= 5;
+    return a + b + c + d + e + f;
+}

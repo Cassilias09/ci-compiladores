@@ -167,6 +167,26 @@ class LexicalAnalyzer:
                     self.generate_token()
                 continue
 
+            if char in ('|', '&'):
+                if i + 1 < length and source_code[i + 1] == char:
+                    self._buffer = char + source_code[i + 1]
+                    self.generate_token()
+                    self._column += 2
+                    i += 2
+                    continue
+                else:
+                    self._buffer = char
+                    exception = LexicalException(
+                        f"Operador lógico incompleto. Esperado '{char}{char}', encontrado '{char}'.",
+                        line=self._line,
+                        column=self._column,
+                    )
+                    self._exceptions.append(exception)
+                    self.reset_buffer()
+                    self._column += 1
+                    i += 1
+                    continue
+
             if char in single_char_tokens:
                 if i + 1 < length and (char + source_code[i + 1]) in multi_char_tokens:
                     self._buffer = char + source_code[i + 1]
