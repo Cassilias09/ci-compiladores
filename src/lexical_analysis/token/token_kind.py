@@ -23,6 +23,7 @@ class TokenKind(enum.Enum):
 
     WHILE = 13
 
+
     RETURN = 14
 
     BRACE_OPEN = 15
@@ -31,4 +32,9 @@ class TokenKind(enum.Enum):
     GREATER = 17
     LESS = 18
     EQUAL_EQUAL = 19
+
+    FUN = 20
+    VAR = 21
+    MAIN = 22
+    COMMA = 23
 
