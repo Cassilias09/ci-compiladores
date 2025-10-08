@@ -39,8 +39,10 @@ Repositório para colocar os trabalhos realizados na disciplina de Construção 
 
 4. Para exemplo de funcionamento do compilador, seguem os seguintes arquivos de teste na pasta inputs:
    - cod.ci
-   - novoTeste.ci
    - fun.ci
+   - fib.ci
+   - programa.ci
+   - novoTeste.ci
    - test_all_comparisons.ci
    - test_comparison.ci
    - test_false_comparisons.ci

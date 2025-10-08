@@ -35,7 +35,7 @@ class FunDeclNode(BaseNode):
 
         code += self.return_node.generate_code()
 
-        code += "mov %rbp, %rsp\n"  # Desaloca variáveis locais (movimenta RSP para RBP)
+        code += "\nmov %rbp, %rsp\n"  # Desaloca variáveis locais (movimenta RSP para RBP)
         code += "pop %rbp\n"  # Restaura o RBP do chamador
         code += "ret\n"  # Retorna ao chamador
         return code
