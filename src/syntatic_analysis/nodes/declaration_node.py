@@ -18,24 +18,23 @@ class FunDeclNode(BaseNode):
 
     def generate_code(self):
         code = f"{self.name}:\n"
-        # Prólogo da Função
+
         code += "push %rbp\n"
         code += "mov %rsp, %rbp\n"
         if self.local_vars:
-            # Aloca espaço para variáveis locais (L * 8 bytes)
+            # aloca espaço para variáveis locais (L * 8 bytes)
             code += f"sub ${len(self.local_vars) * 8}, %rsp\n"
-        # Inicialização das variáveis locais
+
         for idx, var in enumerate(self.local_vars):
-            # Offset: -8, -16, ... (abaixo do RBP)
-            # OBS: var.offset já deve ter sido preenchido pelo SemanticAnalyzer, mas mantemos compatibilidade
+            # offset: -8, -16, ... (abaixo do RBP)
             offset = getattr(var, "offset", -8 * (idx + 1))
             code += var.generate_code(offset)
-        # Geração de código para comandos
+
         for cmd in self.commands:
             code += cmd.generate_code()
-        # Geração de código para a expressão de retorno (o resultado deve estar em %rax)
+
         code += self.return_node.generate_code()
-        # Epílogo da Função
+
         code += "mov %rbp, %rsp\n"  # Desaloca variáveis locais (movimenta RSP para RBP)
         code += "pop %rbp\n"  # Restaura o RBP do chamador
         code += "ret\n"  # Retorna ao chamador
@@ -45,26 +44,23 @@ class LocalVarDeclNode(BaseNode):
     def __init__(self, name, expression):
         self.name = name
         self.expression = expression
-        self.offset = None  # será definido pelo SemanticAnalyzer depois
+        self.offset = None
 
     def display(self, identation: int = 0):
         print((" " * identation) + f"LocalVar: {self.name}")
         self.expression.display(identation + 1)
 
     def generate_code(self, offset=None):
-        # Se offset foi passado explicitamente, usa ele; senão tenta usar self.offset
         off = offset if offset is not None else self.offset
         if off is None:
             print(f"Warning: offset for local variable '{self.name}' is not set.")
-            # Safety: se não temos offset, geramos código para variável global (fallback),
-            # mas idealmente isso não deve acontecer (semantic analyzer deve definir offset).
             code = self.expression.generate_code()
             code += f"\nmov %rax, {self.name}\n"
             return code
-        # Gera o código para calcular a expressão de inicialização (resultado em %rax)
+
         code = self.expression.generate_code()
-        # Move o valor de %rax para o offset da variável local no frame de pilha
         code += f"\nmov %rax, {off}(%rbp)\n"
+        
         return code
 
 class GlobalVarDeclNode(BaseNode):
@@ -77,9 +73,7 @@ class GlobalVarDeclNode(BaseNode):
         self.expression.display(identation + 1)
 
     def generate_code(self):
-        # Gera o código para calcular a expressão de inicialização (resultado em %rax)
         code = self.expression.generate_code()
-        # Move o valor de %rax para o rótulo da variável global
         code += f"\nmov %rax, {self.name}\n"
         return code
 
@@ -89,22 +83,22 @@ class FunCallNode(BaseNode):
         self.args = args  # Lista de nós de expressão (argumentos)
 
     def display(self, identation: int = 0):
-        # Converte a lista de argumentos para string para exibição
         print((" " * identation) + f"FunCall: {self.name}({', '.join(str(a) for a in self.args)})")
         for arg in self.args:
             arg.display(identation + 1)
 
     def generate_code(self):
         code = ""
-        # Avalia argumentos em ordem reversa e os empilha
+
         for arg in reversed(self.args):
-            code += arg.generate_code()  # Resultado da expressão vai para %rax
-            code += "\npush %rax\n"  # Empilha o argumento
-        code += f"call {self.name}\n"  # Chama a função
+            code += arg.generate_code()
+            code += "\npush %rax\n"
+        code += f"call {self.name}\n"
+        
         if self.args:
-            # Limpa os argumentos da pilha (N * 8 bytes)
+            # limpa os argumentos da pilha (N * 8 bytes)
             code += f"add ${len(self.args) * 8}, %rsp\n"
-        # O resultado da chamada fica em %rax
+
         return code
         
 class DeclarationNode(BaseNode):
@@ -117,8 +111,6 @@ class DeclarationNode(BaseNode):
         self.expression.display(identation + 1)
         
     def generate_code(self):
-        # Gera o código para calcular a expressão de inicialização (resultado em %rax)
         code = self.expression.generate_code()
-        # Move o valor de %rax para o rótulo (uso genérico para variáveis, geralmente globais neste contexto)
         code += f"\nmov %rax, {self.name}\n"
         return code

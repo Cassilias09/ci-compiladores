@@ -20,7 +20,6 @@ class SymbolTable:
         if name in self.table:
             return self.table[name]
         elif self.parent:
-            # Procura no escopo pai se não for encontrado localmente
             return self.parent.lookup(name)
         else:
             return None

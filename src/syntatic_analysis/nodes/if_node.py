@@ -30,10 +30,10 @@ class IfNode(BaseNode):
 
         code = (
             cond_code
-            + f"    cmp $0, %rax\n"
-            + f"    je {label_else}\n"
+            + f"cmp $0, %rax\n"
+            + f"je {label_else}\n"
             + then_code
-            + f"    jmp {label_end}\n"
+            + f"jmp {label_end}\n"
             + f"{label_else}:\n"
             + else_code
             + f"{label_end}:\n"

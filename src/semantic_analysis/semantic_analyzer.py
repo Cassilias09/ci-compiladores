@@ -35,26 +35,21 @@ class SemanticAnalyzer:
             return
         
         if isinstance(node, ProgramNode):
-            # Processamento de declarações globais (vars e funs)
             for decl in node.global_vars:
                 self._visit(decl, table)
             
             for decl in node.functions:
                 self._visit(decl, table)
 
-            # Criação do escopo para main
             main_table = table.push_scope()
             self.current_local_offset = -8
             self.current_frame_min = 0
 
-            # bloco principal (node.result_expression é BlockNode)
             self._visit(node.result_expression, main_table)
 
-            # Calculo do frame_size para main
             frame_size = -self.current_frame_min if self.current_frame_min < 0 else 0
             setattr(node.result_expression, "frame_size", frame_size)
 
-            # cleanup
             self.current_local_offset = None
             self.current_frame_min = None
             return
@@ -62,28 +57,24 @@ class SemanticAnalyzer:
         elif isinstance(node, BlockNode):
             block_table = table.push_scope()
 
-            # Primeira passagem: declaração dos LocalVarDeclNode
+            # primeira passagem: declaração dos LocalVarDeclNode
             for stmt in node.statements:
                 if isinstance(stmt, LocalVarDeclNode):
                     if block_table.lookup(stmt.name):
                         self.errors.append(f"Variável local '{stmt.name}' já declarada neste bloco.")
                     else:
-                        # Se não estiver dentro de função/main, current_local_offset deve ser inicializado antes
                         if self.current_local_offset is None:
-                            # declaração local fora de função/main -> erro (ou trate como global)
                             self.errors.append(f"Declaração local '{stmt.name}' fora de função/main.")
                             block_table.declare(stmt.name, 'local', offset=None)
                         else:
                             block_table.declare(stmt.name, 'local', offset=self.current_local_offset)
                             stmt.offset = self.current_local_offset
-                            # atualizar frame_min
                             if self.current_local_offset < self.current_frame_min:
                                 self.current_frame_min = self.current_local_offset
                             self.current_local_offset -= 8
 
-            # Segunda passagem: visite as expressões e comandos com a tabela já populada
+            # segunda passagem: visite as expressões e comandos com a tabela já populada
             for stmt in node.statements:
-                # Para as declarações locais já inicializadas, visite o expression com o block_table
                 self._visit(stmt, block_table)
             return
                     
@@ -121,11 +112,9 @@ class SemanticAnalyzer:
                 fun_table.declare(param, 'param', offset=param_offset)
                 param_offset += 8
 
-            # inicializa contadores do frame da função
             self.current_local_offset = -8
             self.current_frame_min = 0
 
-            # 1) declare locais que estão listados em node.local_vars (se existirem)
             for local in getattr(node, "local_vars", []) or []:
                 if fun_table.lookup(local.name):
                     self.errors.append(f"Variável local '{local.name}' já declarada na função '{node.name}'.")
@@ -137,16 +126,13 @@ class SemanticAnalyzer:
                     self.current_local_offset -= 8
                 self._visit(local.expression, fun_table)
 
-            # 2) visite comandos e return (eles podem conter blocos que usam o mesmo contador)
             for cmd in node.commands:
                 self._visit(cmd, fun_table)
             self._visit(node.return_node, fun_table)
 
-            # compute frame_size e anote
             frame_size = -self.current_frame_min if self.current_frame_min < 0 else 0
             setattr(node, "frame_size", frame_size)
 
-            # limpar controladores
             self.current_local_offset = None
             self.current_frame_min = None
             return
@@ -169,7 +155,6 @@ class SemanticAnalyzer:
                 self.errors.append(f"Variável '{node.variable.name}' não declarada antes da atribuição.")
             else:
                 node.variable.entry = var_entry
-                # Atribui também o offset diretamente ao AssignmentNode
                 if hasattr(var_entry, "offset"):
                     node.offset = var_entry.offset
             self._visit(node.expression, table)

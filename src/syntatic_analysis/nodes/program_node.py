@@ -20,7 +20,6 @@ class ProgramNode(BaseNode):
     def generate_code(self):
         # 1. Definição das seções
         code = ".section .bss\n"
-        
         code += "\n.section .text\n"
         code += ".globl _start\n\n"
         
@@ -31,7 +30,7 @@ class ProgramNode(BaseNode):
         for global_var in self.global_vars:
             code += global_var.generate_code()
         
-        code += "    call main\n\n"
+        code += "call main\n\n"
         
         # 3. Geração de código para as funções definidas pelo usuário
         for func in self.functions:
@@ -50,3 +49,4 @@ class ProgramNode(BaseNode):
         # 5. Geração de código para o corpo do 'main'
         code += self.result_expression.generate_code()
         return code
+    

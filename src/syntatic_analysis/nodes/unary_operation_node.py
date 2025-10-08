@@ -13,9 +13,9 @@ class UnaryOperationNode(BaseNode):
         code = self.operand.generate_code()
         
         if self.operator == '!':
-            code += "\n    cmp $0, %rax\n"
-            code += "    sete %al\n"
-            code += "    movzx %al, %rax\n"
+            code += "\ncmp $0, %rax\n"
+            code += "sete %al\n"
+            code += "movzx %al, %rax\n"
 
         else:
             raise ValueError(f"Unary operator '{self.operator}' not supported for code generation.")

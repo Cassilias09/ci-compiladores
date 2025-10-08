@@ -46,7 +46,6 @@ class SyntacticalAnalyzer:
             else:
                 self.advance()
 
-        # Espera a palavra-chave 'main'
         if not self._check_token() or self._check_token().kind != TokenKind.MAIN:
             self._except(self._check_token())
             if len(self._exceptions) != 0:
@@ -434,25 +433,19 @@ class SyntacticalAnalyzer:
         token = self._check_token()
         if token and token.kind == TokenKind.NOT:
             op = self._read_token()
-            # UnaryOperationNode não foi fornecido, mas a lógica seria esta:
-            from syntatic_analysis.nodes.unary_operation_node import UnaryOperationNode 
             operand = self._parse_unary() 
             return UnaryOperationNode(op.lexeme, operand)
         return self._parse_primary()
 
     def _parse_primary(self):
-        # REMOVIDO: token = self._check_token()
-
-        # Consome o próximo token e decide o que fazer com ele.
         token = self._read_token()
 
         if not token:
             self._except(None)
             return None
 
-        # CASO 1: É um parêntese de abertura
         if token.kind == TokenKind.PARENTHESIS_OPEN:
-            expr_node = self._parse_expression() # Recomeça a cadeia para a expressão interna
+            expr_node = self._parse_expression()
             
             # Verifica se o próximo token fecha o parêntese
             closing_token = self._read_token()
@@ -462,15 +455,13 @@ class SyntacticalAnalyzer:
                 
             return expr_node
         
-        # CASO 2: É um número literal
         elif token.kind == TokenKind.LITERAL:
             return LiteralNode(token.lexeme)
 
-        # CASO 3: É um identificador (variável ou chamada de função)
         elif token.kind == TokenKind.IDENTIFIER:
-            # Verifica se o PRÓXIMO token é '(', indicando uma chamada de função
+            # Verifica se o próximo token é '(', indicando uma chamada de função
             if self._check_token() and self._check_token().kind == TokenKind.PARENTHESIS_OPEN:
-                self._read_token()  # Consome '('
+                self._read_token()
                 
                 args = []
                 if self._check_token() and self._check_token().kind != TokenKind.PARENTHESIS_CLOSE:
@@ -478,23 +469,20 @@ class SyntacticalAnalyzer:
                     while True:
                         args.append(self._parse_expression())
                         if self._check_token() and self._check_token().kind == TokenKind.COMMA:
-                            self._read_token() # Consome ',' e continua
+                            self._read_token()
                         else:
-                            break # Sai do loop se não houver mais vírgulas
+                            break
                 
                 # Verifica o ')' de fechamento da chamada de função
                 if not self._check_token() or self._read_token().kind != TokenKind.PARENTHESIS_CLOSE:
                     self._except(self._check_token())
                     return None
                 
-                # Se você ainda não tem FunCallNode, precisará criá-lo
-                from syntatic_analysis.nodes.declaration_node import FunCallNode
                 return FunCallNode(token.lexeme, args)
             else:
                 # Se não for seguido por '(', é apenas uma variável
                 return VariableNode(token.lexeme)
                 
-        # CASO 4: Token inesperado
         else:
             self._except(token)
             return None
