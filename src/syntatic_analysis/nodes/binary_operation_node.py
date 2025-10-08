@@ -28,28 +28,24 @@ class BinaryOperationNode(BaseNode):
     def generate_code(self):
         left_code = self.left.generate_code()
         right_code = self.right.generate_code()
-        
-        # --- PADRÃO UNIFICADO DE AVALIAÇÃO ---
         code = (
-            f"{left_code}\n"
-            + "    push %rax\n"
-            + f"{right_code}\n"
-            + "    mov %rax, %rbx\n"
-            + "    pop %rax\n"
+            f"{right_code}\n"
+            + "push %rax\n"
+            + f"{left_code}\n"
+            + "pop %rbx\n"
             + self._operator_to_code()
         )
         return code
 
     def _operator_to_code(self):
-        # Agora as operações estão na ordem correta: %rax (A) op %rbx (B)
         match self.operator:
             case "*":
-                return "    imul %rbx, %rax\n" # Usa imul para multiplicação segura
+                return "mul %rbx\n"
             case "/":
-                return "    xor %rdx, %rdx\n" + "    div %rbx\n" # A em %rax / B em %rbx
+                return "xor %rdx, %rdx\n" + "div %rbx\n"
             case "+":
-                return "    add %rbx, %rax\n" # A + B
+                return "add %rbx, %rax\n"
             case "-":
-                return "    sub %rbx, %rax\n" # A - B
+                return "sub %rbx, %rax\n"
             case _:
                 raise ValueError(f"Operator '{self.operator}' not supported.")

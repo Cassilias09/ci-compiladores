@@ -14,39 +14,71 @@ class LogicalOperationNode(BaseNode):
         self.right.display(identation + 1)
 
 class LogicalAndNode(LogicalOperationNode):
+    """
+    Nó para o operador lógico '&&' com avaliação de curto-circuito.
+    """
     def generate_code(self):
         end_label = LabelGenerator.new("AndEnd")
         
-        code = self.left.generate_code()       # %rax = left
-        code += "    cmp $0, %rax\n"          # padroniza left como 0 ou 1
+        # 1. Avalia o lado esquerdo
+        code = self.left.generate_code()
+        
+        # 2. Se for falso, pula direto para o fim (curto-circuito)
+        code += "\n    # Short-circuit check for AND\n"
+        code += "    cmp $0, %rax\n"
+        code += f"    je {end_label}\n"
+        
+        # 3. Salva o resultado do lado esquerdo e avalia o direito
+        code += "    push %rax\n"
+        code += self.right.generate_code()
+        
+        # 4. Combina os dois resultados com 'and' lógico
+        code += "    mov %rax, %rbx\n"
+        code += "    pop %rax\n"
+        code += "    and %rbx, %rax\n"
+        code += "    cmp $0, %rax\n"
         code += "    setne %al\n"
         code += "    movzx %al, %rax\n"
-        code += f"    cmp $0, %rax\n"
-        code += f"    je {end_label}\n"       # curto-circuito se falso
-        code += self.right.generate_code()    # %rax = right
-        code += "    cmp $0, %rax\n"          # padroniza right como 0 ou 1
-        code += "    setne %al\n"
-        code += "    movzx %al, %rax\n"
-        code += f"{end_label}:\n"
+        
+        # 5. Label de fim
+        code += f"\n{end_label}:\n"
         return code
 
 class LogicalOrNode(LogicalOperationNode):
+    """
+    Nó para o operador lógico '||' com avaliação de curto-circuito.
+    """
     def generate_code(self):
         true_label = LabelGenerator.new("OrTrue")
         end_label = LabelGenerator.new("OrEnd")
         
-        code = self.left.generate_code()      # %rax = left
+        # 1. Avalia o lado esquerdo
+        code = self.left.generate_code()
+        
+        # 2. Se o lado esquerdo for verdadeiro, curto-circuita
+        code += "\n    # Short-circuit check for OR\n"
         code += "    cmp $0, %rax\n"
-        code += "    setne %al\n"
-        code += "    movzx %al, %rax\n"
-        code += f"    jne {true_label}\n"    # curto-circuito se verdadeiro
-        code += self.right.generate_code()    # %rax = right
+        code += f"    jne {true_label}\n"
+        
+        # 3. Caso contrário, salva o resultado e avalia o lado direito
+        code += "    push %rax\n"
+        code += self.right.generate_code()
+        
+        # 4. Combina com OR lógico
+        code += "    mov %rax, %rbx\n"
+        code += "    pop %rax\n"
+        code += "    or %rbx, %rax\n"
         code += "    cmp $0, %rax\n"
         code += "    setne %al\n"
         code += "    movzx %al, %rax\n"
         code += f"    jmp {end_label}\n"
-        code += f"{true_label}:\n"
-        code += "    mov $1, %rax\n"
-        code += f"{end_label}:\n"
+        
+        # 5. Curto-circuito (resultado verdadeiro)
+        code += f"\n{true_label}:\n"
+        code += "    cmp $0, %rax\n"       # normaliza o valor já existente
+        code += "    setne %al\n"
+        code += "    movzx %al, %rax\n"
+        
+        # 6. Label de fim
+        code += f"\n{end_label}:\n"
         return code
-

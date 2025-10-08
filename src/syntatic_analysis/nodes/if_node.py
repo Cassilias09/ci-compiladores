@@ -20,22 +20,24 @@ class IfNode(BaseNode):
 
     def generate_code(self):
         cond_code = self.condition.generate_code()
-        
+
         then_code = self.then_body.generate_code()
         
-        else_code = self.else_body.generate_code() if self.else_body else ""
+        else_code = ""
+        if self.else_body:
+            else_code = self.else_body.generate_code()
 
         label_else = LabelGenerator.new("Lelse")
         label_end = LabelGenerator.new("Lend")
 
         code = (
             cond_code
-            + f"    cmp $0, %rax\n"
-            + f"    je {label_else}\n"
+            + f"\ncmp $0, %rax\n"
+            + f"je {label_else}\n"
             + then_code
-            + f"    jmp {label_end}\n"
+            + f"\njmp {label_end}\n"
             + f"{label_else}:\n"
             + else_code
-            + f"{label_end}:\n"
+            + f"\n{label_end}:\n"
         )
         return code
